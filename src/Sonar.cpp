@@ -288,7 +288,7 @@ int SonarUartImpl::com_init(int com_num, int Baud)
     int uart_fd = 0;
     if((uart_fd = open_port(com_num)) < 0)
     {
-        perror("open_port");
+	perror("open_port");
         exit(-1);
     }
     if(set_com_config(uart_fd, Baud, 8, 'N', 1) < 0)

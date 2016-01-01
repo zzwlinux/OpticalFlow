@@ -5,7 +5,6 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/opencv.hpp>
 
-
 using namespace std;
 
 OpticalFlowServer::OpticalFlowServer()
@@ -65,25 +64,9 @@ void OpticalFlowServer::run()
     //bool swapImg=true;
     cv::Mat img;
 
-
-    int count = 0;
-    while(count<1000)
+    while(true)
     {
-	count++;
-	pi::timer.enter("opticalFlow.prepareData");
-	/*
-	if(swapImg){
-            video>>srcImg0;
-            img = srcImg0;
-            swapImg = false;
-        }
-        else{
-            video>>srcImg1;
-            img = srcImg1;
-            swapImg = true;
-        }*/
         video>>img;
-
         cv::cvtColor(img,img,CV_BGR2GRAY);
         assert(img.channels()==1);
         if(uav->get(uavData))
@@ -93,20 +76,20 @@ void OpticalFlowServer::run()
             lastHeight = currHeight;
             curR_tmp.FromEulerAngle(uavData.getPitch(), uavData.getYaw(), uavData.getRoll());
             curR = curR_tmp*UAV2camera;
-	    pi::timer.leave("opticalFlow.prepareData");
 	  
-	    pi::timer.enter("opticalFlow.handleFrame");	
             result=opticalFlow.handleFrame(img,curR,distance_);
-	    pi::timer.leave("opticalFlow.handleFrame");
 
             x += result.x;
             y += result.y;
             	
-	//    printf("x = %f, y = %f\n",x,y);
+     //       printf("x = %f, y = %f\n",x,y);
             MSG_INNNOSend msg;
             msg.setX(x*100);
             msg.setY(y*100);
             msg.setZ(result.h*100);
+	    msg.setVX(result.x*100);
+	    msg.setVY(result.y*100);
+
             uav->send(msg);
         }
         else{

@@ -75,7 +75,6 @@ public:
         preImg=curImg.clone();preR=rotation;
         if(!height)
         {
-	    printf("flush!\n");
             float r[9];
             rotation.getMatrix(r);
 	    preH=sonar->get().distance*r[8];
@@ -95,7 +94,6 @@ public:
             return result;
         }
 
-        pi::timer.enter("goodFeaturesToTrack&&calcOpticalFlowPyrLK");
         std::vector<cv::Point2f> preCorners,curCorners,preCornersGood,curCornersGood;
         vector <uchar> status;
         vector <float> err;
@@ -113,7 +111,12 @@ public:
         cv::FAST(preImg,prev_corner,40,true);
         for(size_t i=0; (i<50)&&(i < prev_corner.size()); i++)
             preCorners.push_back(prev_corner[i].pt);
-
+        if(!prev_corner.size())
+	{
+		printf("size = 0\n");
+		flushCurrent(curImg,rotation);
+	        return result;
+	}
         cv::Size winSize = cv::Size(21, 21);
         int maxLevel = 3;
         cv::TermCriteria criteria = cv::TermCriteria(
@@ -128,7 +131,6 @@ public:
             if(status[i])
             {
                 preCornersGood.push_back(preCorners[i]);
-           // cout<<"dx= "<<preCorners[i].x-curCorners[i].x<<", dy="<<preCorners[i].y-curCorners[i].y<<"\n";
                 curCornersGood.push_back(curCorners[i]);
             }
         }
@@ -138,9 +140,7 @@ public:
             flushCurrent(curImg,rotation);
             return result;
         }
-	pi::timer.leave("goodFeaturesToTrack&&calcOpticalFlowPyrLK");
 
-	pi::timer.enter("sonar");
         float r[9];
         rotation.getMatrix(r);
         float raw_dis = sonar->get().distance;
@@ -149,9 +149,7 @@ public:
         float heightIsGood = result.h - preH - distance_;
         if(heightIsGood>0.4 || heightIsGood<-0.4)
             result.h = preH + distance_ ;
-	pi::timer.leave("sonar");
  
-        pi::timer.enter("projectPoints2Ground");
         vector<pi::Point2f> preGroundPts,curGroundPts;
         projectPoints2Ground(preCornersGood,preR,preGroundPts,preH);
         projectPoints2Ground(curCornersGood,rotation,curGroundPts,result.h);
@@ -164,7 +162,6 @@ public:
         result.corrNum=findXY3Sigma(preGroundPts,result.x,result.y);
 
         flushCurrent(curImg,rotation,result.h);
-	pi::timer.leave("projectPoints2Ground");
 
         return result;
     }
