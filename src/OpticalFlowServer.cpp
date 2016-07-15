@@ -1,4 +1,4 @@
-#include <time.h>
+﻿#include <time.h>
 #include <fstream>
 #include "OpticalFlowServer.h"
 #include <network/InternetTransfer.h>
@@ -58,10 +58,8 @@ void OpticalFlowServer::run()
     UAVData           uavData;
     pi::SO3f curR, curR_tmp;
     float x = 0.0f, y = 0.0f;
-    // pi::SO3f camera2UAV(pi::Point3d(1,0,0),-M_PI);
-    //std::ofstream outf("uart.txt");
-    pi::SO3f UAV2camera(pi::Point3d(1,0,0),-M_PI);// = camera2UAV.inv();
-    //int count_ = 0;
+    pi::SO3f UAV2camera(pi::Point3d(1,0,0),-M_PI);
+    float lastHeight = 0.0f;
 #ifdef COUNT_TIME   
     time_t t0,t1;
     t0 = clock();
@@ -76,17 +74,20 @@ void OpticalFlowServer::run()
         assert(img.channels()==1);
         if(uav->get(uavData))
         {
+            float currHeight = uavData.getAlt();
+            float distance_ = currHeight - lastHeight;
+            lastHeight = currHeight;
             curR_tmp.FromEulerAngle(uavData.getPitch(), uavData.getYaw(), uavData.getRoll());
             curR = curR_tmp*UAV2camera;
-            result=opticalFlow.handleFrame(img,curR);
+            result = opticalFlow.handleFrame(img,curR,distance_);
             x += result.x;
             y += result.y;
-	//    outf<<x<<" "<<y<<"\n";
             	
-	  //  printf("x = %f, y = %f\n",x,y);
+	//    printf("x = %f, y = %f\n",x,y);
             MSG_INNNOSend msg;
             msg.setX(x*100);
             msg.setY(y*100);
+            msg.setZ(result.h*100);
             uav->send(msg);
         }
         else{

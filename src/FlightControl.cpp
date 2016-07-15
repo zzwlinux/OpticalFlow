@@ -84,7 +84,7 @@ public:
     bool send(MSG_INNNOSend& target){
         uint8_t   sendBuf[17];
         sendBuf[0]=0xA5;sendBuf[1]=0x5A;
-        sendBuf[2]=0x12;sendBuf[3]=16;
+        sendBuf[2]=0x12;sendBuf[3]=0x0c;
 
         target.toBuf(sendBuf+4);
         uint8_t sum=0;

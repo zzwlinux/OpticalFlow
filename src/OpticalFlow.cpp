@@ -47,7 +47,7 @@ public:
 
     }
 
-    virtual OpticalFlowResult handleFrame(const cv::Mat& curImg,const pi::SO3f& rotation)
+    virtual OpticalFlowResult handleFrame(const cv::Mat& curImg,const pi::SO3f& rotation,const float& distance_)
     {
         return OpticalFlowResult();
     }
@@ -81,7 +81,7 @@ public:
 	}
     }
 
-    virtual OpticalFlowResult handleFrame(const cv::Mat& curImg,const pi::SO3f& rotation)
+    virtual OpticalFlowResult handleFrame(const cv::Mat& curImg,const pi::SO3f& rotation,const float& distance_)
     {
         OpticalFlowResult result;
         ASSERT2(curImg.channels()==1,"OpticalFlow need gray image input!\n");
@@ -124,6 +124,11 @@ public:
         rotation.getMatrix(r);
         float raw_dis = sonar->get().distance;
         result.h=raw_dis*r[8];
+
+        float heightIsGood = result.h - preH - distance_;
+        if(heightIsGood>0.4 || heightIsGood<-0.4)
+            result.h = preH + distance_ ;
+
         vector<pi::Point2f> preGroundPts,curGroundPts;
         projectPoints2Ground(preCornersGood,preR,preGroundPts,preH);
         projectPoints2Ground(curCornersGood,rotation,curGroundPts,result.h);
@@ -262,11 +267,11 @@ public:
 
         cv::Mat H = cv::Mat::zeros(2,3,CV_64F);
         H = cv::estimateRigidTransform(preCornersGood,curCornersGood,false);
-        cout<<"\n H = "<<H<<"\n";
-        double dx = H.at<double>(0,2);
+        
+	double dx = H.at<double>(0,2);
         double dy = H.at<double>(1,2);
-        result.h=sonar->get().distance;
-        printf("getDistance = %f\n",result.h);
+        
+	result.h=sonar->get().distance;
         result.x=dx*fxInv*result.h*100;
         result.y=dy*fyInv*result.h*100;
         result.corrNum = 1;
@@ -283,8 +288,8 @@ OpticalFlow::OpticalFlow(const pi::hardware::Camera& camera,const SPtr<Sonar> so
     if(type==OpticalFlowTypeWithPose) impl=SPtr<OpticalFlowImpl>(new OpticalFlowWithPose(camera,sonar_));
 }
 
-
-OpticalFlowResult OpticalFlow::handleFrame(const cv::Mat& curImg,const pi::SO3f& rotation)
+OpticalFlowResult OpticalFlow::handleFrame(const Mat &curImg, const pi::SO3f &rotation, const float &distance_)
 {
-    return impl->handleFrame(curImg,rotation);
+    return impl->handleFrame(curImg,rotation,distance_);
 }
+
