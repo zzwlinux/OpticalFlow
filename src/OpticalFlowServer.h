@@ -15,7 +15,9 @@ public:
     SPtr<Sonar>                                 sonar;
     Camera                                      camera;
     OpticalFlow                                 opticalFlow;
+#ifdef INTERNET_DEBUG
     SPtr<InternetTransfer<OpticalFlowResult> >  ResultTransfer;
+#endif
 };
 
 #endif // OPTICALFLOWSERVER_H

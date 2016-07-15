@@ -74,40 +74,40 @@ int set_com_config(int fd, int baud_rate, int data_bits, char parity, int stop_b
     switch(baud_rate)
     {
     case 2400:
-        {
-            speed = B2400;
-        }
+    {
+        speed = B2400;
+    }
         break;
     case 4800:
-        {
-            speed = B4800;
-        }
+    {
+        speed = B4800;
+    }
         break;
     case 9600:
-        {
-            speed = B9600;
-        }
+    {
+        speed = B9600;
+    }
         break;
     case 19200:
-        {
-            speed = B19200;
-        }
+    {
+        speed = B19200;
+    }
         break;
     case 38400:
-        {
-            speed = B38400;
-        }
+    {
+        speed = B38400;
+    }
         break;
     case 57600:
-        {
-            speed = B57600;
-        }
+    {
+        speed = B57600;
+    }
         break;
     default:
     case 115200:
-        {
-            speed = B115200;
-        }
+    {
+        speed = B115200;
+    }
         break;
     }
     cfsetispeed(&new_cfg, speed);
@@ -116,15 +116,15 @@ int set_com_config(int fd, int baud_rate, int data_bits, char parity, int stop_b
     switch(data_bits)
     {
     case 7:
-        {
-            new_cfg.c_cflag |= CS7;
-        }
+    {
+        new_cfg.c_cflag |= CS7;
+    }
         break;
     default:
     case 8:
-        {
-            new_cfg.c_cflag |= CS8;
-        }
+    {
+        new_cfg.c_cflag |= CS8;
+    }
         break;
     }
     /*设置奇偶校验位*/
@@ -133,30 +133,30 @@ int set_com_config(int fd, int baud_rate, int data_bits, char parity, int stop_b
     default:
     case 'n':
     case 'N':
-        {
-            new_cfg.c_cflag &= ~PARENB;
-        }
+    {
+        new_cfg.c_cflag &= ~PARENB;
+    }
         break;
     case 'o':
     case 'O':
-        {
-            new_cfg.c_cflag |= (PARODD | PARENB);
-            new_cfg.c_iflag |= (INPCK | ISTRIP);
-        }
+    {
+        new_cfg.c_cflag |= (PARODD | PARENB);
+        new_cfg.c_iflag |= (INPCK | ISTRIP);
+    }
         break;
     case 'e':
     case 'E':
-        {
-            new_cfg.c_cflag |= PARENB;
-            new_cfg.c_cflag &= ~PARODD;
-            new_cfg.c_iflag |= (INPCK | ISTRIP);
-        }
+    {
+        new_cfg.c_cflag |= PARENB;
+        new_cfg.c_cflag &= ~PARODD;
+        new_cfg.c_iflag |= (INPCK | ISTRIP);
+    }
         break;
     case 's':/*as no parity*/
     case 'S':
-        {
-            new_cfg.c_cflag &= ~PARENB;
-        }
+    {
+        new_cfg.c_cflag &= ~PARENB;
+    }
         break;
     }
     /*设置停止位*/
@@ -164,17 +164,17 @@ int set_com_config(int fd, int baud_rate, int data_bits, char parity, int stop_b
     {
     default:
     case 1:
-        {
-            new_cfg.c_cflag &= ~CSTOPB;
-        }
+    {
+        new_cfg.c_cflag &= ~CSTOPB;
+    }
         break;
     case 2:
-        {
-            new_cfg.c_cflag |= CSTOPB;
-        }
+    {
+        new_cfg.c_cflag |= CSTOPB;
+    }
         break;
     }
-/*c_cflag标志可以定义CLOCAL和CREAD，这将确保该程序不被其他端口控制和信号干扰
+    /*c_cflag标志可以定义CLOCAL和CREAD，这将确保该程序不被其他端口控制和信号干扰
 ，同时串口驱动将读取进入的数据。CLOCAL和CREAD通常总是被是能的。*/
     /*设置等待时间和最小接收字符*/
     new_cfg.c_cc[VTIME] = 0;
@@ -263,7 +263,7 @@ float SonarUartImpl::getDistance(TimeStamp& time)
     int  nread = 0;
 
     while (nread<=0) {
-        usleep(1000);
+        usleep(500);
         ioctl(read_port_fd, FIONREAD, &nread);
     }
     time=pi::tm_get_us();
@@ -311,7 +311,7 @@ int SonarUartImpl::open_sonal(void)
         exit(-1);
     }
     base = mmap(NULL, MAP_SIZE, PROT_READ | PROT_WRITE,
-                              MAP_SHARED, dev_fd, GPIOC_BASE_ADDRESS );
+                MAP_SHARED, dev_fd, GPIOC_BASE_ADDRESS );
 
     return 0;
 }
@@ -350,7 +350,7 @@ int SonarTest()
     while(1){
         usleep(10000);
         data=sonal->get();
-        if(data.distance!=0.0f) 
+        if(data.distance!=0.0f)
         {
             lastTime=data.timestamp;
             printf("distance: %f\n",data.distance); //声纳类， 返回采集的值

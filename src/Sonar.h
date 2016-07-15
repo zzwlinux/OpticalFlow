@@ -40,20 +40,20 @@ public:
     virtual bool valid(){return false;}
 
     SonarData get()
-	{
-		pi::ScopedMutex lock(mutex);
-		if(data.size()){
-			 return data.back();
-		}
-		else{
-			return SonarData();
-		    }
-	 }
-   
-     bool   insert(const SonarData& f){
-			pi::ScopedMutex lock(mutex);
-			data.push_back(f);
-		}
+    {
+        pi::ScopedMutex lock(mutex);
+        if(data.size()){
+            return data.back();
+        }
+        else{
+            return SonarData();
+        }
+    }
+
+    bool   insert(const SonarData& f){
+        pi::ScopedMutex lock(mutex);
+        data.push_back(f);
+    }
     size_t    size(){return data.size();}
 
     pi::Mutex               mutex;

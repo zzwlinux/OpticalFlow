@@ -81,6 +81,21 @@ public:
         dt=data;return true;
     }
 
+    bool send(MSG_INNNOSend& target){
+        uint8_t   sendBuf[17];
+        sendBuf[0]=0xA5;sendBuf[1]=0x5A;
+        sendBuf[2]=0x12;sendBuf[3]=16;
+
+        target.toBuf(sendBuf+4);
+        uint8_t sum=0;
+        for(int i=2;i<16;i++)
+        {
+            sum+=sendBuf[i];
+        }
+        sendBuf[16]=sum;
+        uart.write(sendBuf,17);
+    }
+
     virtual void run()
     {
         uint8_t         buf[1024];
@@ -200,6 +215,11 @@ bool FlightControlInnno::get(UAVData &dt)
 bool FlightControlInnno::valid()
 {
     return impl->valid;
+}
+
+bool FlightControlInnno::send(MSG_INNNOSend &target)
+{
+    return impl->send(target);
 }
 
 int UAVTest()

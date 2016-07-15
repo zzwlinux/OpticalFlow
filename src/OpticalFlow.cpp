@@ -130,7 +130,7 @@ public:
 
         for(int i=0;i<preGroundPts.size();i++){
             preGroundPts[i]=curGroundPts[i]-preGroundPts[i];
-    }
+        }
         //RANSAC and find dx dy
         //        findXYRansac(preGroundPts,result.x,result.y);
         result.corrNum=findXY3Sigma(preGroundPts,result.x,result.y);

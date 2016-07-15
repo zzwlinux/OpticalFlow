@@ -2,7 +2,7 @@
 #define FLIGHTCONTROL_H
 #include <sys/types.h>
 #include <base/types/SPtr.h>
-
+#include <ostream>
 //Type 0x11
 struct UAVData//21 byte
 {
@@ -31,6 +31,55 @@ struct UAVData//21 byte
     u_char  nSat,fixQuality,startAutoLand; //3 byte
 };
 
+//Type 0x12
+struct MSG_INNNOSend//12 byte
+{
+
+    void  fromBuf(unsigned char* buf)
+    {
+        //high first
+        unsigned char* p=buf;
+        x=(int16_t)(*(p++) << 8 | *(p++));
+        y=(int16_t)(*(p++) << 8 | *(p++));
+        z=(int16_t)(*(p++) << 8 | *(p++));
+
+        vx=(int16_t)(*(p++) << 8 | *(p++));
+        vy=(int16_t)(*(p++) << 8 | *(p++));
+        vz=(int16_t)(*(p++) << 8 | *(p++));
+
+    }
+
+    void toBuf(unsigned char* buf)
+    {
+        unsigned char* p=buf;
+
+        *(p++)=x>>8;*(p++)=x&0x00FF;
+        *(p++)=y>>8;*(p++)=y&0x00FF;
+        *(p++)=z>>8;*(p++)=z&0x00FF;
+
+        *(p++)=vx>>8;*(p++)=vx&0x00FF;
+        *(p++)=vy>>8;*(p++)=vy&0x00FF;
+        *(p++)=vz>>8;*(p++)=vz&0x00FF;
+
+    }
+
+    void setX(float _x){x=_x*100;}
+    void setY(float _y){y=_y*100;}
+    void setZ(float _z){z=_z*100;}
+    void setVX(float _x){vx=_x*100;}
+    void setVY(float _y){vy=_y*100;}
+    void setVZ(float _z){vz=_z*100;}
+
+    friend inline std::ostream& operator <<(std::ostream& os,const MSG_INNNOSend& p)
+    {
+        os<<p.x<<" "<<p.y<<" "<<p.z<<" "
+         <<p.vx<<" "<<p.vy<<" "<<p.vz;
+        return os;
+    }
+
+    int16_t x,y,z,vx,vy,vz;//*0.01
+};
+
 class FlightControl
 {
 public:
@@ -39,6 +88,7 @@ public:
 
     virtual bool get(UAVData& dt){return false;}
     virtual bool valid(){return false;}
+    virtual bool send(MSG_INNNOSend& target){return false;}
 };
 
 class FlightControlInnnoImpl;
@@ -48,7 +98,7 @@ public:
     FlightControlInnno();
     virtual bool get(UAVData &dt);
     virtual bool valid();
-
+    virtual bool send(MSG_INNNOSend& target);
     SPtr<FlightControlInnnoImpl> impl;
 };
 

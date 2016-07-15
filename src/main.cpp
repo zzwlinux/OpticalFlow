@@ -40,6 +40,7 @@ void data_save(void){
 
 int main(int argc,char** argv)
 {
+//    printf("main!\n");
     svar.ParseMain(argc,argv);
     string act = svar.GetString("Act", "OpticalFlowServer");
 
