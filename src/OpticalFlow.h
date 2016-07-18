@@ -39,7 +39,7 @@ public:
     OpticalFlow(const pi::hardware::Camera& camera=pi::hardware::Camera(),
                 const SPtr<Sonar> sonar=SPtr<Sonar>(),int type=0);
 
-    OpticalFlowResult handleFrame(const cv::Mat& curImg,const pi::SO3f& rotation);
+    OpticalFlowResult handleFrame(const cv::Mat& curImg,const pi::SO3f& rotation,const float &distance_);
 
 private:
     SPtr<OpticalFlowImpl> impl;

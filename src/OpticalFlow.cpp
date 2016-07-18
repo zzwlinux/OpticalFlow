@@ -3,6 +3,9 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/opencv.hpp>
 
+#include <base/time/Time.h>
+#include <base/time/Timer.h>
+#include <base/time/Global_Timer.h>
 using namespace std;
 using namespace cv;
 
@@ -47,7 +50,7 @@ public:
 
     }
 
-    virtual OpticalFlowResult handleFrame(const cv::Mat& curImg,const pi::SO3f& rotation)
+    virtual OpticalFlowResult handleFrame(const cv::Mat& curImg,const pi::SO3f& rotation,const float& distance_)
     {
         return OpticalFlowResult();
     }
@@ -72,6 +75,7 @@ public:
         preImg=curImg.clone();preR=rotation;
         if(!height)
         {
+	    printf("flush!\n");
             float r[9];
             rotation.getMatrix(r);
 	    preH=sonar->get().distance*r[8];
@@ -81,7 +85,7 @@ public:
 	}
     }
 
-    virtual OpticalFlowResult handleFrame(const cv::Mat& curImg,const pi::SO3f& rotation)
+    virtual OpticalFlowResult handleFrame(const cv::Mat& curImg,const pi::SO3f& rotation,const float& distance_)
     {
         OpticalFlowResult result;
         ASSERT2(curImg.channels()==1,"OpticalFlow need gray image input!\n");
@@ -91,18 +95,33 @@ public:
             return result;
         }
 
+        pi::timer.enter("goodFeaturesToTrack&&calcOpticalFlowPyrLK");
         std::vector<cv::Point2f> preCorners,curCorners,preCornersGood,curCornersGood;
         vector <uchar> status;
         vector <float> err;
 
-        cv::goodFeaturesToTrack(preImg,preCorners,40, 0.01, 30, cv::noArray(), 3, true, 0.04);
+       /* cv::goodFeaturesToTrack(preImg,preCorners,40, 0.01, 30, cv::noArray(), 3, true, 0.04);
 
         if(preCorners.size()<3)
         {
             flushCurrent(curImg,rotation);
             return result;
         }
-        calcOpticalFlowPyrLK(preImg, curImg, preCorners, curCorners, status, err);
+        calcOpticalFlowPyrLK(preImg, curImg, preCorners, curCorners, status, err);*/
+
+        std::vector<cv::KeyPoint> prev_corner;
+        cv::FAST(preImg,prev_corner,40,true);
+        for(size_t i=0; (i<50)&&(i < prev_corner.size()); i++)
+            preCorners.push_back(prev_corner[i].pt);
+
+        cv::Size winSize = cv::Size(21, 21);
+        int maxLevel = 3;
+        cv::TermCriteria criteria = cv::TermCriteria(
+                    (cv::TermCriteria::COUNT + cv::TermCriteria::EPS), 20, 0.05);
+        int flag = 0;
+        double minEigThreshold = 0.001;
+        cv::calcOpticalFlowPyrLK(preImg, curImg, preCorners, curCorners,
+                                 status, err, winSize, maxLevel, criteria, flag, minEigThreshold);
 
         for(size_t i=0; i < status.size(); i++)
         {
@@ -119,11 +138,20 @@ public:
             flushCurrent(curImg,rotation);
             return result;
         }
+	pi::timer.leave("goodFeaturesToTrack&&calcOpticalFlowPyrLK");
 
+	pi::timer.enter("sonar");
         float r[9];
         rotation.getMatrix(r);
         float raw_dis = sonar->get().distance;
         result.h=raw_dis*r[8];
+
+        float heightIsGood = result.h - preH - distance_;
+        if(heightIsGood>0.4 || heightIsGood<-0.4)
+            result.h = preH + distance_ ;
+	pi::timer.leave("sonar");
+ 
+        pi::timer.enter("projectPoints2Ground");
         vector<pi::Point2f> preGroundPts,curGroundPts;
         projectPoints2Ground(preCornersGood,preR,preGroundPts,preH);
         projectPoints2Ground(curCornersGood,rotation,curGroundPts,result.h);
@@ -136,7 +164,7 @@ public:
         result.corrNum=findXY3Sigma(preGroundPts,result.x,result.y);
 
         flushCurrent(curImg,rotation,result.h);
-
+	pi::timer.leave("projectPoints2Ground");
 
         return result;
     }
@@ -230,7 +258,7 @@ public:
         printf("fxInv = %f,fyInv = %f\n",fxInv,fyInv);
     }
 
-    virtual OpticalFlowResult handleFrame(const cv::Mat& curImg,const pi::SO3f& rotation)
+    virtual OpticalFlowResult handleFrame(const cv::Mat& curImg,const pi::SO3f& rotation,const float& distance_)
     {
         OpticalFlowResult result;
         ASSERT2(curImg.channels()==1,"OpticalFlow need gray image input!\n");
@@ -262,11 +290,11 @@ public:
 
         cv::Mat H = cv::Mat::zeros(2,3,CV_64F);
         H = cv::estimateRigidTransform(preCornersGood,curCornersGood,false);
-        cout<<"\n H = "<<H<<"\n";
-        double dx = H.at<double>(0,2);
+        
+	double dx = H.at<double>(0,2);
         double dy = H.at<double>(1,2);
-        result.h=sonar->get().distance;
-        printf("getDistance = %f\n",result.h);
+        
+	result.h=sonar->get().distance;
         result.x=dx*fxInv*result.h*100;
         result.y=dy*fyInv*result.h*100;
         result.corrNum = 1;
@@ -283,8 +311,8 @@ OpticalFlow::OpticalFlow(const pi::hardware::Camera& camera,const SPtr<Sonar> so
     if(type==OpticalFlowTypeWithPose) impl=SPtr<OpticalFlowImpl>(new OpticalFlowWithPose(camera,sonar_));
 }
 
-
-OpticalFlowResult OpticalFlow::handleFrame(const cv::Mat& curImg,const pi::SO3f& rotation)
+OpticalFlowResult OpticalFlow::handleFrame(const Mat &curImg, const pi::SO3f &rotation, const float &distance_)
 {
-    return impl->handleFrame(curImg,rotation);
+    return impl->handleFrame(curImg,rotation,distance_);
 }
+

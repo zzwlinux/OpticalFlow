@@ -58,48 +58,61 @@ void OpticalFlowServer::run()
     UAVData           uavData;
     pi::SO3f curR, curR_tmp;
     float x = 0.0f, y = 0.0f;
-    // pi::SO3f camera2UAV(pi::Point3d(1,0,0),-M_PI);
-    //std::ofstream outf("uart.txt");
-    pi::SO3f UAV2camera(pi::Point3d(1,0,0),-M_PI);// = camera2UAV.inv();
-    //int count_ = 0;
-#ifdef COUNT_TIME   
-    time_t t0,t1;
-    t0 = clock();
-    while(count_++<300)
-#else
-    while(true)
-#endif
+    pi::SO3f UAV2camera(pi::Point3d(1,0,0),-M_PI);
+    float lastHeight = 0.0f;
+    
+    //cv::Mat srcImg0,srcImg1,img;
+    //bool swapImg=true;
+    cv::Mat img;
+
+
+    int count = 0;
+    while(count<1000)
     {
-        cv::Mat img;
+	count++;
+	pi::timer.enter("opticalFlow.prepareData");
+	/*
+	if(swapImg){
+            video>>srcImg0;
+            img = srcImg0;
+            swapImg = false;
+        }
+        else{
+            video>>srcImg1;
+            img = srcImg1;
+            swapImg = true;
+        }*/
         video>>img;
+
         cv::cvtColor(img,img,CV_BGR2GRAY);
         assert(img.channels()==1);
         if(uav->get(uavData))
         {
+	    float currHeight = uavData.getAlt();
+            float distance_ = currHeight - lastHeight;
+            lastHeight = currHeight;
             curR_tmp.FromEulerAngle(uavData.getPitch(), uavData.getYaw(), uavData.getRoll());
             curR = curR_tmp*UAV2camera;
-            result=opticalFlow.handleFrame(img,curR);
+	    pi::timer.leave("opticalFlow.prepareData");
+	  
+	    pi::timer.enter("opticalFlow.handleFrame");	
+            result=opticalFlow.handleFrame(img,curR,distance_);
+	    pi::timer.leave("opticalFlow.handleFrame");
+
             x += result.x;
             y += result.y;
-	//    outf<<x<<" "<<y<<"\n";
             	
-	  //  printf("x = %f, y = %f\n",x,y);
+	//    printf("x = %f, y = %f\n",x,y);
             MSG_INNNOSend msg;
             msg.setX(x*100);
             msg.setY(y*100);
+            msg.setZ(result.h*100);
             uav->send(msg);
         }
         else{
             printf("error");
         }
-	//if(count_%10==0) outf.flush();
-	//count_++;
-	
     }
-#ifdef COUNT_TIME   
-    t1 = clock();
-    printf("time = %ud us\n",t1-t0);
-#endif
 }
 
 
