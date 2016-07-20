@@ -1,4 +1,4 @@
-#include <time.h>
+﻿#include <time.h>
 #include <fstream>
 #include "OpticalFlowServer.h"
 #include <network/InternetTransfer.h>
@@ -59,10 +59,9 @@ void OpticalFlowServer::run()
     float x = 0.0f, y = 0.0f;
     pi::SO3f UAV2camera(pi::Point3d(1,0,0),-M_PI);
     float lastHeight = 0.0f;
-    
-    //cv::Mat srcImg0,srcImg1,img;
-    //bool swapImg=true;
+
     cv::Mat img;
+
 
     while(true)
     {
@@ -71,24 +70,25 @@ void OpticalFlowServer::run()
         assert(img.channels()==1);
         if(uav->get(uavData))
         {
-	    float currHeight = uavData.getAlt();
+            float currHeight = uavData.getAlt();
+
             float distance_ = currHeight - lastHeight;
             lastHeight = currHeight;
             curR_tmp.FromEulerAngle(uavData.getPitch(), uavData.getYaw(), uavData.getRoll());
             curR = curR_tmp*UAV2camera;
-	  
+
             result=opticalFlow.handleFrame(img,curR,distance_);
 
             x += result.x;
             y += result.y;
-            	
-     //       printf("x = %f, y = %f\n",x,y);
+
             MSG_INNNOSend msg;
             msg.setX(x*100);
             msg.setY(y*100);
             msg.setZ(result.h*100);
-	    msg.setVX(result.x*100);
-	    msg.setVY(result.y*100);
+
+            msg.setVX(result.x*100);
+            msg.setVY(result.y*100);
 
             uav->send(msg);
         }

@@ -1,4 +1,4 @@
-#ifndef OPTICALFLOW_H
+﻿#ifndef OPTICALFLOW_H
 #define OPTICALFLOW_H
 #include <opencv2/core/core.hpp>
 #include <base/types/SPtr.h>

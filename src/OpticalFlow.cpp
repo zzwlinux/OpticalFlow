@@ -149,7 +149,7 @@ public:
         float heightIsGood = result.h - preH - distance_;
         if(heightIsGood>0.4 || heightIsGood<-0.4)
             result.h = preH + distance_ ;
- 
+
         vector<pi::Point2f> preGroundPts,curGroundPts;
         projectPoints2Ground(preCornersGood,preR,preGroundPts,preH);
         projectPoints2Ground(curCornersGood,rotation,curGroundPts,result.h);
